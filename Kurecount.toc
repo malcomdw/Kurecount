@@ -1,0 +1,8 @@
+## Interface: 30300
+## Notes: Provides a DPS meter for your party
+
+Kurecount.lua
+Kurecount.xml
+
+
+

@@ -1,0 +1,472 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+
+
+	<Button name="ResizeButtonTemplate" virtual="true">
+		<Size x="16" y="16"/>
+		<Anchors>
+			<Anchor point="BOTTOMRIGHT"/>
+		</Anchors>
+		<Scripts>
+			<OnMouseDown>
+						self:SetButtonState("PUSHED", true);
+						self:GetHighlightTexture():Hide();
+						self:GetParent():StartSizing("BOTTOMRIGHT");
+			</OnMouseDown>
+			<OnMouseUp>
+						self:SetButtonState("NORMAL", false);
+						self:GetHighlightTexture():Show();
+						self:GetParent():StopMovingOrSizing();
+			</OnMouseUp>
+		</Scripts>
+		<NormalTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Up"/>
+		<HighlightTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Highlight"/>
+		<PushedTexture file="Interface\ChatFrame\UI-ChatIM-SizeGrabber-Down"/>
+	</Button> 
+
+	<Frame name="HeaderFrameTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="100" y="25"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT"/>
+			<Anchor point="TOPRIGHT"/> 
+		</Anchors>
+
+
+		<Frames>
+			
+		</Frames>		
+
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture setAllPoints="true">
+					<Color r="0.0" g="0.0" b="0.0" a="1.0"/>
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<FontString name="$parentMenuText" inherits="GameFontWhiteSmall" justifyH="RIGHT" justifyV="MIDDLE" text="Raid Damage">
+					<Size  x="100" y="22"/>
+					<Anchors>
+						<Anchor point="RIGHT">
+							<Offset x="-72" y="0"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentTargetText" inherits="GameFontWhiteSmall" justifyH="LEFT" justifyV="MIDDLE" text="Kurecount">
+					<Size  x="200" y="22"/>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset x="2" y="0"/>
+						</Anchor>
+						<Anchor point="RIGHT" relativeTo="$parentMenuText" relativePoint="LEFT">
+							<Offset x="-2" y="0"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				
+			</Layer>
+		</Layers>
+	</Frame>
+
+	<Frame name="DetailsFrameTemplate"  inherits="KureListTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="400" y="500"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPRIGHT">
+				<Offset x="10" y="0"/>
+			</Anchor>
+		</Anchors>
+		<Frames>
+			<Frame name="$parentHeaderFrame" inherits="HeaderFrameTemplate"/>
+		</Frames>
+	</Frame>
+
+	<Frame name="BarFrameTemplate" virtual="true">
+		<Size  x="100" y="16"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentBar" setAllPoints="true">
+					<Size  x="100" y="15"/>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT"/>
+					</Anchors>		
+				</Texture>
+			</Layer>
+			<Layer level="OVERLAY">
+				<FontString name="$parentTextLeft" justifyH="LEFT" justifyV="MIDDLE" inherits="GameFontHighlightSmall" text="Item">
+					<Size  x="200" y="15"/>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT">
+							<Offset x="2" y="0"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentTextRight" justifyH="RIGHT" justifyV="MIDDLE" inherits="GameFontHighlightSmall" text="damage">
+					<Size  x="200" y="15"/>
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT">
+							<Offset x="-2" y="0"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+	</Frame>
+
+	<Frame name="KureListTemplate" virtual="true">
+		<Frames>
+			<Frame name="$parentItem1" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT"/>
+					<Anchor point="TOPRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem2" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem1" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem1" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem3" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem2" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem2" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem4" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem3" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem3" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem5" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem4" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem4" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem6" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem5" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem5" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem7" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem6" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem6" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem8" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem7" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem7" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem9" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem8" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem8" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem10" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem9" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem9" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem11" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem10" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem10" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem12" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem11" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem11" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem13" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem12" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem12" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem14" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem13" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem13" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem15" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem14" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem14" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem16" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem15" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem15" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem17" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem16" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem16" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem18" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem17" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem17" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem19" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem18" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem18" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem20" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem19" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem19" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem21" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem20" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem20" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem22" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem21" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem21" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem23" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem22" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem22" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem24" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem23" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem23" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem25" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem24" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem24" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem26" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem25" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem25" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem27" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem26" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem26" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem28" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem27" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem27" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem29" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem28" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem28" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem30" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem29" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem29" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem31" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem30" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem30" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem32" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem31" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem31" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem33" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem32" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem32" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem34" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem33" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem33" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem35" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem34" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem34" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem36" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem35" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem35" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem37" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem36" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem36" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem38" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem37" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem37" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem39" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem38" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem38" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+			<Frame name="$parentItem40" inherits="BarFrameTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentItem39" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentItem39" relativePoint="BOTTOMRIGHT"/>
+				</Anchors>
+			</Frame>
+		</Frames>
+	</Frame>
+
+	<ScrollFrame name="ScrollFrameTemplate" inherits="UIPanelScrollFrameTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="100" y="20"/>
+		</Size>
+
+
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture setAllPoints="true">
+					<Color r="0.0" g="0.0" b="0.0" a="0.5"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<ScrollChild>
+			<Frame name="$parentChild" inherits="KureListTemplate">
+				<Size>
+					<AbsDimension x="100" y="650"/>
+				</Size>
+			</Frame>
+		</ScrollChild>
+
+	</ScrollFrame>
+
+	<Frame name="KurecountFrameTemplate" virtual="true" parent="UIParent" enableMouse="true" movable="true" resizable="true" frameLevel="1">
+		<ResizeBounds>
+			<minResize>
+				<AbsDimension x="296" y="120"/>
+			</minResize>
+			<maxResize>
+				<AbsDimension x="608" y="400"/>
+			</maxResize>
+		</ResizeBounds>
+		<Frames>
+			<Frame name="$parentHeaderFrame" inherits="HeaderFrameTemplate" frameLevel="2"/>
+			<ScrollFrame name="$parentScrollFrame" inherits="ScrollFrameTemplate" frameLevel="2">
+				<Scripts>
+					<OnSizeChanged>
+						local frameName = self:GetName()
+						local childFrame = getglobal(frameName.."Child")
+						childFrame:SetWidth(self:GetRight() - self:GetLeft())
+						Kurecount_UpdateFrames()
+					</OnSizeChanged>
+				</Scripts>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentHeaderFrame" relativePoint="BOTTOMLEFT"/>
+					<Anchor point="TOPRIGHT" relativeTo="$parentHeaderFrame" relativePoint="BOTTOMRIGHT"/>
+					<Anchor point="BOTTOMLEFT"/>
+					<Anchor point="BOTTOMRIGHT"/>
+				</Anchors>
+			</ScrollFrame>
+			<Button name="$parentClose"  inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="RIGHT" relativeTo="$parentHeaderFrame" relativePoint="RIGHT"/> 
+				</Anchors>
+			</Button>
+			<Button name="$parentNextButton"  inherits="UIPanelSquareButton">
+				<Scripts>
+					<OnLoad>
+						SquareButton_SetIcon(self, "RIGHT");
+					</OnLoad>
+				</Scripts>
+				<Anchors>
+					<Anchor point="RIGHT" relativeTo="$parentClose" relativePoint="LEFT"/> 
+				</Anchors>
+			</Button>
+			<Button name="$parentPrevButton"  inherits="UIPanelSquareButton">
+				<Scripts>
+					<OnLoad>
+						SquareButton_SetIcon(self, "LEFT");
+					</OnLoad>
+				</Scripts>
+				<Anchors>
+					<Anchor point="RIGHT" relativeTo="$parentNextButton" relativePoint="LEFT"/> 
+				</Anchors>
+			</Button>
+			<Button name="$parentResizeButton" inherits="ResizeButtonTemplate" frameLevel="3"/>
+		</Frames>
+	</Frame>
+
+	<Frame name="Kurecount" inherits="KurecountFrameTemplate">
+		<Size>
+			<AbsDimension x="400" y="300"/>
+		</Size>
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+		<Scripts>
+			<OnLoad function="Kurecount_OnLoad"/>
+			<OnEvent function="Kurecount_OnEvent"/>
+			<OnUpdate function="Kurecount_OnUpdate"/>
+			<OnDragStart>self:StartMoving();</OnDragStart>
+			<OnDragStop>self:StopMovingOrSizing();</OnDragStop>
+		</Scripts>
+	</Frame>
+	<Frame name="KurecountDetails" inherits="KurecountFrameTemplate">
+		<Size>
+			<AbsDimension x="400" y="300"/>
+		</Size>
+
+		<Anchors>
+			<Anchor point="TOPLEFT" relativeTo="Kurecount" relativePoint="TOPRIGHT"/>
+			<Anchor point="BOTTOMLEFT" relativeTo="Kurecount" relativePoint="BOTTOMRIGHT"/>
+		</Anchors>
+		<Scripts>
+			<OnLoad function="KurecountDetails_OnLoad"/>
+			<OnDragStart>self:StartMoving();</OnDragStart>
+			<OnDragStop>self:StopMovingOrSizing();</OnDragStop>
+		</Scripts>
+	</Frame>
+</Ui>
