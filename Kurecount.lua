@@ -26,8 +26,8 @@ local CLASS_COLORS = {
   WARRIOR = {r=0.78, g=0.61, b=0.43}, 
 }
 local DEFAULT_COLORS = {
-  {r=0.5, g=0.5, b=0.5}, 
-  {r=0.7, g=0.7, b=0.7}, 
+  {r=0.2, g=0.2, b=0.2}, 
+  {r=0.4, g=0.4, b=0.4}, 
 }
 local TRACKED_SUMMONS = {
   SPELL_SUMMON = true,
@@ -39,8 +39,6 @@ local TARGETS = "Targets"
 local SPELLS = "Spells"
 local FRIEND = "Friend Fire"
 
-local MAIN_FRAME_OPTIONS = {DAMAGE, TARGETS}
-local DETAILS_FRAME_OPTIONS = {SPELLS, TARGETS}
 local frameRefresh = 1.0
 
 local MAIN_PREV = "KurecountPrevButton"
@@ -63,11 +61,16 @@ local player_info = {}
 local pet_info = {}
 local party_damage = {}
 local target_damage = {}
+local friend_fire = {}
+local MAIN_FRAME_OPTIONS = {DAMAGE, TARGETS, FRIEND}
+local MAIN_DATA_TABLES = {party_damage, target_damage, friend_fire}
+local DETAILS_FRAME_OPTIONS = {SPELLS, TARGETS}
+
+
   
 
 --VARIABLES  
 local player_guid = nil
-local total_damage = 0
 local target = nil
 
 
@@ -141,29 +144,18 @@ function Kurecount_OpenDetails(self)
 end
 
 
-local zero_mt = {
-    __index = function(tbl, key)
-      return 0
-    end,
-  }
 
 function Kurecount_ResetValues()
-  combat_time = 0
-  total_damage = 0
-  party_damage = newTable()
-  target_damage = newTable()
+  party_damage = {}
+  target_damage = {}
+  friend_fire = {}
   target = nil
   combat_start = nil
   combat_end = nil
+  combat_time = 0
   counter = 0
 end
 
-
-function newTable()
-	local new = {}
-	setmetatable(new, zero_mt)
-	return new
-end 
 
 
 function Kurecount_OnUpdate(self, elapsed)
@@ -244,106 +236,83 @@ function Kurecount_UpdatePlayerInfoGuid(guid)
 	end
 end 
 
-function compareByTotalDamage(a,b)
-  return a.totalDamage > b.totalDamage
-end
 
 function compareByDamage(a,b)
   return a.damage > b.damage
 end
 
-function Kurecount_UpdateDamageAmount(srcGUID, srcName, srcFlags, amount, destGUID, destName, destFlags, spellName)
-  -- if guardian, object or pet: change guid to owner's
-  if bit.band(srcFlags, bit.bor(COMBATLOG_OBJECT_TYPE_GUARDIAN, COMBATLOG_OBJECT_TYPE_OBJECT, COMBATLOG_OBJECT_TYPE_PET)) ~=0 then
-    if pet_info[srcGUID] == nil then
+
+function getPetOwner(srcGUID)
+	if pet_info[srcGUID] == nil then
 	  Kurecount_UpdatePets()
 	  Kurecount_UpdatePlayersInfo()
 	  if pet_info[srcGUID] == nil then
 		return
 	  end
     end
-    srcGUID = pet_info[srcGUID].ownerGuid
-	if spellName then
-		spellName = "<PET="..srcName..">"..spellName
-	end
-  end
-  
-  if srcGUID == nil then
-    return
-  end
+    return pet_info[srcGUID].ownerGuid
+end 
 
-  total_damage = total_damage + amount
-  
-  local damageUpdated = false
-  
-  for i,elem in ipairs(party_damage) do
-    if elem.guid == srcGUID then
-      
-	  --total
-	  party_damage[i].totalDamage = party_damage[i].totalDamage + amount
-      
-	  --damage by target
-	  damageUpdated = false
-	  for j,elem in ipairs(party_damage[i].damageByTarget) do
-        if elem.target == destName then
-          party_damage[i].damageByTarget[j].damage = party_damage[i].damageByTarget[j].damage + amount
-          damageUpdated = true
-        end
-      end
-      if not damageUpdated then
-        table.insert(party_damage[i].damageByTarget, {target = destName, damage = amount})
-      end
-      table.sort(party_damage[i].damageByTarget, compareByDamage)
-      
-	  --damage by spell
-	  damageUpdated = false
-	  for j,elem in ipairs(party_damage[i].damageBySpell) do
-        if elem.spell == spellName then
-		  party_damage[i].damageBySpell[j].count = party_damage[i].damageBySpell[j].count + 1
-          party_damage[i].damageBySpell[j].damage = party_damage[i].damageBySpell[j].damage + amount
-          damageUpdated = true
-        end
-      end
-      if not damageUpdated then
-        table.insert(party_damage[i].damageBySpell, {spell = spellName, damage = amount, count = 1})
-      end
-      table.sort(party_damage[i].damageBySpell, compareByDamage)
-      
-	  damageUpdated = true
+
+function Kurecount_UpdateDamageTable(tableVar, subTableName, name, subName, amount)
+	if not tableVar then
+		tableVar = {}
+	end
+	if not tableVar.damage then
+		tableVar.damage = 0
+	end
+	tableVar.damage = tableVar.damage + amount
+	
+	local updated = false
+	
+	for i,elem in ipairs(tableVar) do
+		if elem.name == name then
+			if not elem[subTableName] then
+				elem[subTableName] = {}
+				elem.damage = 0
+			end
+			elem.damage = elem.damage + amount
+			for j,subelem in ipairs(elem[subTableName]) do
+				if subelem.name == subName then
+					subelem.damage = subelem.damage + amount
+					subelem.count = subelem.count + 1
+					table.sort(elem[subTableName], compareByDamage)
+					updated = true
+					break
+				end
+			end
+			if not updated then
+				table.insert(elem[subTableName], {name = subName, damage = amount, count = 1})
+				updated = true
+			end
+			break
+		end
     end
-  end
+	if not updated then
+		table.insert(tableVar,{name = name, totalDamage = amount, subTableName = {name = subName, damage = amount, count = 1}})
+	end
+end
 
-  if not damageUpdated then table.insert(party_damage, {guid = srcGUID, totalDamage = amount, damageByTarget = {{target = destName, damage = amount}}, damageBySpell = {{spell = spellName, damage = amount, count = 1}}}) end
-  table.sort(party_damage, compareByTotalDamage)
 
-  
-  damageUpdated = false
-  --target pov
-  for i,elem in ipairs(target_damage) do
-    if elem.target == destName then
-      --total
-	  target_damage[i].totalDamage = target_damage[i].totalDamage + amount
-      
-	  --damage by target
-	  for j,elem in ipairs(target_damage[i].damageByPlayer) do
-        if elem.player == srcGUID then
-          target_damage[i].damageByPlayer[j].damage = target_damage[i].damageByPlayer[j].damage + amount
-          damageUpdated = true
-        end
-      end
-      if not damageUpdated then
-        table.insert(target_damage[i].damageByPlayer, {player = srcGUID, damage = amount})
-      end
-      table.sort(target_damage[i].damageByPlayer, compareByDamage)
-      damageUpdated = true
+function Kurecount_UpdateDamageAmount(srcGUID, srcName, srcFlags, amount, destGUID, destName, destFlags, spellName)
+  -- if source is guardian, object or pet: change guid to owner's
+  if bit.band(srcFlags, bit.bor(COMBATLOG_OBJECT_TYPE_GUARDIAN, COMBATLOG_OBJECT_TYPE_OBJECT, COMBATLOG_OBJECT_TYPE_PET)) ~=0 then
+    srcGUID = getPetOwner(srcGUID)
+	if spellName then
+		spellName = spellName.." <"..srcName..">"
 	end
   end
-  if not damageUpdated then 
-	table.insert(target_damage, {target = destName, totalDamage = amount, damageByPlayer = {{player = srcGUID, damage = amount}}}) 
-  end
-  table.sort(target_damage, compareByTotalDamage)
   
-
+  if player_info[destGUID] then
+	-- friend fire
+	Kurecount_UpdateDamageTable(friend_fire, "damageByTarget", srcGUID, destName, amount)
+	Kurecount_UpdateDamageTable(friend_fire, "damageBySpell", srcGUID, spellName, amount)
+  else
+	-- damage
+	Kurecount_UpdateDamageTable(party_damage, "damageByTarget", srcGUID, destName, amount)
+	Kurecount_UpdateDamageTable(party_damage, "damageBySpell", srcGUID, spellName, amount)
+	Kurecount_UpdateDamageTable(target_damage, "damageByPlayer", destName, srcGUID, amount)
+  end
 end
 
 function Kurecount_UpdatePets()
@@ -378,10 +347,6 @@ function Kurecount_TrackDamage(timestamp, combatEvent, hideCaster, srcGUID, srcN
 		return
 	end
 	
-	-- if the target is a player ignore it (friend fire)
-	if player_info[destGUID] then
-		return
-	end
 	local offset = 4
 	local spellName
     if (combatEvent == "SWING_DAMAGE") then
@@ -435,24 +400,18 @@ function Kurecount_UpdateFrames()
   if #party_damage == 0 then 
     return
   end
-  if MAIN_FRAME_OPTIONS[mainOption + 1] == DAMAGE then 
-	  for i, v in ipairs(party_damage) do
-		Kurecount_UpdatePlayerInfoGuid(v.guid)
-		Kurecount_UpdateMainFrameRaidDamage(i)
-	  end
-	  Kurecount_HideRowsMainFrame(#party_damage+1, 40)		
-  end
-  if MAIN_FRAME_OPTIONS[mainOption + 1] == TARGETS then 
-	  for i, v in ipairs(target_damage) do
-		Kurecount_UpdateMainFrameTargets(i)
-	  end
-	  Kurecount_HideRowsMainFrame(#target_damage+1, 40)
-  end	  
-  
+  Kurecount_UpdateMain()
   Kurecount_UpdateDetails()
 end
 
-
+function Kurecount_UpdateMain()
+	tableVar = MAIN_DATA_TABLES[mainOption + 1]
+	for i, v in ipairs(tableVar) do
+		--Kurecount_UpdatePlayerInfoGuid(v.name)
+		Kurecount_UpdateMainFrame(tableVar, i)
+	end
+	Kurecount_HideRowsMainFrame(#tableVar + 1, 40)		
+end
 
 
 function Kurecount_HideRowsMainFrame(init_idx, end_idx)
@@ -471,6 +430,7 @@ end
 
 function Kurecount_UpdateDetails()
 	if detailsName and MAIN_FRAME_OPTIONS[mainOption + 1] == DAMAGE then
+		if not player_info[detailsName] then return end
 		getglobal(DETAILS_TARGET_TEXT):SetFormattedText("Details: %s", player_info[detailsName].name)
 		Kurecount_ShowDetailsFrameButtons()
 		if DETAILS_FRAME_OPTIONS[detailsOption + 1] == SPELLS then
@@ -500,66 +460,65 @@ function Kurecount_HideDetailsFrameButtons()
 end
 
 
+function Kurecount_UpdateDetailsDamage(damageTable, totalDamage)
+	local maxDamage = 0
+	for j, w in ipairs(damageTable) do
+		if j==1 then maxDamage = w.damage end
+		local percentRowLength = w.damage / maxDamage
+		local percenttext = PercentageNum(w.damage / totalDamage)
+		local textName = string.format("%d. %s (%d)", j, w.name, w.count)
+		local textDamage = string.format("%s (%s)", ShortNum(w.damage), percenttext)
+		local color = DEFAULT_COLORS[1 + j%(#DEFAULT_COLORS)]
+		Kurecount_FillRowFrame(DETAILS_ROW..j, textName, textDamage, color, percentRowLength)
+	end
+	Kurecount_HideRowsDetailsFrame(#damageTable + 1, 40)
+end
+
+
 function Kurecount_UpdateDetailsSpells()
 	for i, v in ipairs(party_damage) do
-		if v.guid == detailsName then
-			local maxDamage = 0
-			for j, w in ipairs(v.damageBySpell) do
-				if j==1 then maxDamage = w.damage end
-				local percentRowLength = w.damage / maxDamage
-				local percenttext = PercentageNum(w.damage / v.totalDamage)
-				local textName = string.format("%d. %s (%d)", j, w.spell, w.count)
-				local textDamage = string.format("%s (%s)", ShortNum(w.damage), percenttext)
-				local color = DEFAULT_COLORS[1 + j%(#DEFAULT_COLORS)]
-				Kurecount_FillRowFrame(DETAILS_ROW..j, textName, textDamage, color, percentRowLength)
-			end
-			Kurecount_HideRowsDetailsFrame(#v.damageBySpell+1, 40)
+		if v.name == detailsName then
+			Kurecount_UpdateDetailsDamage(v.damageBySpell, v.damage)
 		end
 	end
 end
 
 function Kurecount_UpdateDetailsTargets()
 	for i, v in ipairs(party_damage) do
-		if v.guid == detailsName then
-			local maxDamage = 0
-			for j, w in ipairs(v.damageByTarget) do
-				if j==1 then maxDamage = w.damage end
-				local percentRowLength = w.damage / maxDamage
-				local percenttext = PercentageNum(w.damage / v.totalDamage)
-				local textName = string.format("%d. %s", j, w.target)
-				local textDamage = string.format("%s (%s)", ShortNum(w.damage), percenttext)
-				local color = DEFAULT_COLORS[1 + j%(#DEFAULT_COLORS)]
-				Kurecount_FillRowFrame(DETAILS_ROW..j, textName, textDamage, color, percentRowLength)
-			end
-			Kurecount_HideRowsDetailsFrame(#v.damageByTarget+1, 40)
+		if v.name == detailsName then
+			Kurecount_UpdateDetailsDamage(v.damageByTarget, v.damage)
 		end
 	end
 end
 
 function Kurecount_UpdateDetailsTargetPlayers()
 	for i, v in ipairs(target_damage) do
-		if v.target == detailsName then
-			local maxDamage = 0
-			for j, w in ipairs(v.damageByPlayer) do
-				if j==1 then maxDamage = w.damage end
-				local percentRowLength = w.damage / maxDamage
-				local percenttext = PercentageNum(w.damage / v.totalDamage)
-				local textName = string.format("%d. %s", j, player_info[w.player].name)
-				local textDamage = string.format("%s (%s)", ShortNum(w.damage), percenttext)
-				local color = CLASS_COLORS[player_info[w.player].classFilename]
-				Kurecount_FillRowFrame(DETAILS_ROW..j, textName, textDamage, color, percentRowLength)
-			end
-			Kurecount_HideRowsDetailsFrame(#v.damageByPlayer+1, 40)
+		if v.name == detailsName then
+			Kurecount_UpdateDetailsDamage(v.damageByPlayer, v.damage)
 		end
 	end
 end
 
-function Kurecount_UpdateMainFrameRaidDamage(i)
-	
-	local guid = party_damage[i].guid
-	local damage = party_damage[i].totalDamage
-	local damagetext = ShortNum(damage)
-	local percenttext = PercentageNum(damage/total_damage)
+function Kurecount_UpdateMainFrame(tableVar, i)
+	print ("Kurecount_UpdateMainFrame")
+	local name, textName, textDamage, color, colorPercent = Kurecount_GetRowParamsFromTable(tableVar, i)
+	Kurecount_FillRowFrame(MAIN_ROW..i, name, textName, textDamage, color, colorPercent)
+end
+
+
+function Kurecount_GetRowParamsFromTable(tableVar, i)
+	local color, name
+	if player_info[tableVar[i].name] then
+		color = CLASS_COLORS[player_info[tableVar[i].name].classFilename]
+		name = player_info[tableVar[i].name].name
+	else
+		color = DEFAULT_COLORS[1 + i%(#DEFAULT_COLORS)]
+		name = tableVar[i].name
+	end
+
+	local maxDamage = tableVar[1].damage
+	local damagetext = ShortNum(tableVar[i].damage)
+	local percenttext = PercentageNum(tableVar[i].damage/tableVar.damage)
 	
 	local totalTime
 	if is_on_combat then
@@ -567,47 +526,20 @@ function Kurecount_UpdateMainFrameRaidDamage(i)
 	else
 		totalTime = combat_time
 	end
-	local dpstext = ShortNum(damage/totalTime)
-	local color = CLASS_COLORS[player_info[guid].classFilename]
-	if not color then
-		color={r=0, g=0, b=0}
+	local dpstext = ShortNum(0)
+	if totalTime > 0 then 
+		dpstext = ShortNum(tableVar[i].damage/totalTime)
 	end
-	local percentRowLength = party_damage[i].totalDamage / party_damage[1].totalDamage
-	local textName = string.format("%d. %s", i, player_info[guid].name)
+	local percentRowLength = tableVar[i].damage / maxDamage
+	local textName = string.format("%d. %s", i, name)
 	local textDamage = string.format("%s (%s, %s)", damagetext, dpstext, percenttext)
 	
-	Kurecount_FillRowFrame(MAIN_ROW..i, textName, textDamage, color, percentRowLength)
-	getglobal(MAIN_ROW..i).name = guid
+	return name, textName, textDamage, color, percentRowLength
+end 
 
-end
-
-
-function Kurecount_UpdateMainFrameTargets(i)
-	
-	local target = target_damage[i].target
-	local damage = target_damage[i].totalDamage
-	local damagetext = ShortNum(damage)
-	local percenttext = PercentageNum(damage/total_damage)
-	
-	local totalTime
-	if is_on_combat then
-		totalTime = GetServerTime() - combat_start
-	else
-		totalTime = combat_time
-	end
-	local dpstext = ShortNum(damage/totalTime)
-	local color = DEFAULT_COLORS[1 + i%(#DEFAULT_COLORS)]
-	local percentRowLength = target_damage[i].totalDamage / target_damage[1].totalDamage
-	local textName = string.format("%d. %s", i, target)
-	local textDamage = string.format("%s (%s, %s)", damagetext, dpstext, percenttext)
-	
-	Kurecount_FillRowFrame(MAIN_ROW..i, textName, textDamage, color, percentRowLength)
-	getglobal(MAIN_ROW..i).name = target
-end
-
-
-function Kurecount_FillRowFrame(frameName, textLeft, textRight, color, colorPercent)
+function Kurecount_FillRowFrame(frameName, name, textLeft, textRight, color, colorPercent)
 	local row = getglobal(frameName)
+	row.name = name
 	local texture = getglobal(frameName.."Bar")
 	texture:SetColorTexture(color.r, color.g, color.b, 1)
 	texture:SetWidth(row:GetWidth() * colorPercent)
