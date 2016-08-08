@@ -25,6 +25,7 @@ local CLASS_COLORS = {
   WARLOCK = {r=0.58, g=0.51, b=0.79}, 
   WARRIOR = {r=0.78, g=0.61, b=0.43}, 
 }
+
 local DEFAULT_COLORS = {
   {r=0.2, g=0.2, b=0.2}, 
   {r=0.4, g=0.4, b=0.4}, 
@@ -63,8 +64,10 @@ local party_damage = {}
 local target_damage = {}
 local friend_fire = {}
 local MAIN_FRAME_OPTIONS = {DAMAGE, TARGETS, FRIEND}
-local MAIN_DATA_TABLES = {party_damage, target_damage, friend_fire}
 local DETAILS_FRAME_OPTIONS = {SPELLS, TARGETS}
+local MAIN_DATA_TABLES = {}
+
+
 
 
   
@@ -85,30 +88,29 @@ local is_on_encounter = false
 --FRAMES
 local mainOption = 0
 local detailsOption = 0
-local detailsName
+local selectedGuid
 
 
 
 
 
 function Kurecount_OnLoad(self)
-  Kurecount_ResetValues()
-  player_info = {}
-  pet_info = {}
-  Kurecount_UpdatePlayersInfo()
-  Kurecount_UpdatePets()
-  player_guid = UnitGUID("player")
   self:RegisterForDrag("LeftButton");
   self:RegisterEvent("RAID_ROSTER_UPDATE")
+  self:RegisterEvent("GROUP_ROSTER_UPDATE")
   self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
   self:RegisterEvent("PLAYER_REGEN_ENABLED")
   self:RegisterEvent("PLAYER_REGEN_DISABLED")
   self:RegisterEvent("ENCOUNTER_START")
   self:RegisterEvent("ENCOUNTER_END")
+  
+  
+  player_info = {}
+  pet_info = {}
   Kurecount_ResetValues()
+  player_guid = UnitGUID("player")
+ 
   Kurecount_HideRows()
-  
-  
   getglobal(MAIN_PREV):SetScript("OnClick", Kurecount_prevMainFrame)
   getglobal(MAIN_PREV):SetScale(0.7)
   getglobal(MAIN_NEXT):SetScript("OnClick", Kurecount_nextMainFrame)
@@ -138,7 +140,8 @@ end
 
 --self = selected row
 function Kurecount_OpenDetails(self)
-	detailsName = self.name
+	selectedGuid = self.id
+	selectedMainFrame = MAIN_FRAME_OPTIONS[mainOption+1]
 	Kurecount_UpdateDetails()
 	getglobal("KurecountDetails"):Show()
 end
@@ -147,13 +150,21 @@ end
 
 function Kurecount_ResetValues()
   party_damage = {}
+  party_spells = {}
+  party_targets = {}
   target_damage = {}
   friend_fire = {}
+  MAIN_DATA_TABLES = {[DAMAGE] = party_damage, [TARGETS] = target_damage, [FRIEND] = friend_fire}
+  
   target = nil
   combat_start = nil
   combat_end = nil
   combat_time = 0
   counter = 0
+  
+  Kurecount_UpdatePlayersInfo()
+  Kurecount_UpdatePets()
+  
 end
 
 
@@ -177,7 +188,7 @@ function Kurecount_OnEvent(self, event, ...)
     end
 	Kurecount_TrackDamage(...)
 
-  elseif event == "GROUP_ROSTER_UPDATE" then
+  elseif event == "RAID_ROSTER_UPDATE" or event == "RAID_ROSTER_UPDATE" then
     Kurecount_UpdatePlayersInfo()
     Kurecount_UpdatePets()
 
@@ -237,8 +248,8 @@ function Kurecount_UpdatePlayerInfoGuid(guid)
 end 
 
 
-function compareByDamage(a,b)
-  return a.damage > b.damage
+function compareByValueDesc(a,b)
+  return a.value > b.value
 end
 
 
@@ -247,50 +258,67 @@ function getPetOwner(srcGUID)
 	  Kurecount_UpdatePets()
 	  Kurecount_UpdatePlayersInfo()
 	  if pet_info[srcGUID] == nil then
-		return
+		return nil
 	  end
     end
     return pet_info[srcGUID].ownerGuid
 end 
 
 
-function Kurecount_UpdateDamageTable(tableVar, subTableName, name, subName, amount)
-	if not tableVar then
-		tableVar = {}
-	end
-	if not tableVar.damage then
-		tableVar.damage = 0
-	end
-	tableVar.damage = tableVar.damage + amount
+function Kurecount_UpdateDetailsTable(tableVar, id, subId, amount)
 	
 	local updated = false
 	
 	for i,elem in ipairs(tableVar) do
-		if elem.name == name then
-			if not elem[subTableName] then
-				elem[subTableName] = {}
-				elem.damage = 0
-			end
-			elem.damage = elem.damage + amount
-			for j,subelem in ipairs(elem[subTableName]) do
-				if subelem.name == subName then
-					subelem.damage = subelem.damage + amount
+		if elem.id == id then
+			for j,subelem in ipairs(elem.data) do
+				if subelem.id == subId then
+					subelem.value = subelem.value + amount
 					subelem.count = subelem.count + 1
-					table.sort(elem[subTableName], compareByDamage)
+					table.sort(elem.data, compareByValueDesc)
 					updated = true
 					break
+					
 				end
 			end
 			if not updated then
-				table.insert(elem[subTableName], {name = subName, damage = amount, count = 1})
+				table.insert(elem.data, {id = subId, value = amount, count = 1})
+				table.sort(elem.data, compareByValueDesc)
 				updated = true
 			end
 			break
 		end
     end
 	if not updated then
-		table.insert(tableVar,{name = name, totalDamage = amount, subTableName = {name = subName, damage = amount, count = 1}})
+		table.insert(tableVar,{id = id, data = {id = subId, value = amount, count = 1}})
 	end
+	table.sort(tableVar, compareByValueDesc)
+end
+
+function Kurecount_UpdateMainTable(tableVar, id, amount)
+	
+	local updated = false
+	
+	for i,elem in ipairs(tableVar) do
+		if elem.id == id then
+			elem.value = elem.value + amount
+			updated = true
+			break
+		end
+	end
+	if not updated then
+		table.insert(tableVar, {id = subId, value = amount})
+	end
+	table.sort(tableVar, compareByValueDesc)
+end
+
+
+function Kurecount_GetTotalValue(tableVar)
+	local result = 0
+	for i,elem in ipairs(tableVar) do
+		result = result + elem.value
+	end
+	return result
 end
 
 
@@ -305,13 +333,16 @@ function Kurecount_UpdateDamageAmount(srcGUID, srcName, srcFlags, amount, destGU
   
   if player_info[destGUID] then
 	-- friend fire
-	Kurecount_UpdateDamageTable(friend_fire, "damageByTarget", srcGUID, destName, amount)
-	Kurecount_UpdateDamageTable(friend_fire, "damageBySpell", srcGUID, spellName, amount)
+	--Kurecount_UpdateDamageTable(friend_targets, "damageByTarget", srcGUID, destName, amount)
+	--Kurecount_UpdateDamageTable(friend_spells, "damageBySpell", srcGUID, spellName, amount)
   else
 	-- damage
-	Kurecount_UpdateDamageTable(party_damage, "damageByTarget", srcGUID, destName, amount)
-	Kurecount_UpdateDamageTable(party_damage, "damageBySpell", srcGUID, spellName, amount)
-	Kurecount_UpdateDamageTable(target_damage, "damageByPlayer", destName, srcGUID, amount)
+	Kurecount_UpdateMainTable(party_damage, srcGUID, amount)
+	Kurecount_UpdateDetailsTable(party_targets, srcGUID, destName, amount)
+	Kurecount_UpdateDetailsTable(party_spells, srcGUID, spellName, amount)
+	
+	Kurecount_UpdateMainTable(target_damage, destName, amount)
+	Kurecount_UpdateDetailsTable(target_source, destName, srcGUID, amount)
   end
 end
 
@@ -356,9 +387,7 @@ function Kurecount_TrackDamage(timestamp, combatEvent, hideCaster, srcGUID, srcN
       spellName = select(2, ...)
     end
 
-	
-	
-    local amount, overkill, school, resisted, blocked, absorbed = select(offset, ...)
+	local amount, overkill, school, resisted, blocked, absorbed = select(offset, ...)
     Kurecount_UpdateDamageAmount(srcGUID, srcName, srcFlags, amount, destGUID, destName, destFlags, spellName)
     
 	if target == nil then
@@ -405,9 +434,8 @@ function Kurecount_UpdateFrames()
 end
 
 function Kurecount_UpdateMain()
-	tableVar = MAIN_DATA_TABLES[mainOption + 1]
+	tableVar = MAIN_DATA_TABLES[MAIN_FRAME_OPTIONS[mainOption + 1]]
 	for i, v in ipairs(tableVar) do
-		--Kurecount_UpdatePlayerInfoGuid(v.name)
 		Kurecount_UpdateMainFrame(tableVar, i)
 	end
 	Kurecount_HideRowsMainFrame(#tableVar + 1, 40)		
@@ -429,9 +457,9 @@ function Kurecount_HideRowsDetailsFrame(init_idx, end_idx)
 end
 
 function Kurecount_UpdateDetails()
-	if detailsName and MAIN_FRAME_OPTIONS[mainOption + 1] == DAMAGE then
-		if not player_info[detailsName] then return end
-		getglobal(DETAILS_TARGET_TEXT):SetFormattedText("Details: %s", player_info[detailsName].name)
+	if selectedGuid and selectedMainFrame == DAMAGE then
+		if not player_info[selectedGuid] then return end
+		getglobal(DETAILS_TARGET_TEXT):SetFormattedText("Details: %s", player_info[selectedGuid].name)
 		Kurecount_ShowDetailsFrameButtons()
 		if DETAILS_FRAME_OPTIONS[detailsOption + 1] == SPELLS then
 			Kurecount_UpdateDetailsSpells()
@@ -440,8 +468,8 @@ function Kurecount_UpdateDetails()
 			Kurecount_UpdateDetailsTargets()
 		end
 	end
-	if detailsName and MAIN_FRAME_OPTIONS[mainOption + 1] == TARGETS then
-		getglobal(DETAILS_TARGET_TEXT):SetFormattedText("Details: %s", detailsName)
+	if selectedGuid and selectedMainFrame == TARGETS then
+		getglobal(DETAILS_TARGET_TEXT):SetFormattedText("Details: %s", selectedGuid)
 		Kurecount_HideDetailsFrameButtons()
 		Kurecount_UpdateDetailsTargetPlayers()
 	end
@@ -460,65 +488,75 @@ function Kurecount_HideDetailsFrameButtons()
 end
 
 
-function Kurecount_UpdateDetailsDamage(damageTable, totalDamage)
+function Kurecount_UpdateDetailsDamage(damageTable)
+	local total = Kurecount_GetTotalValue(tableVar)
 	local maxDamage = 0
 	for j, w in ipairs(damageTable) do
-		if j==1 then maxDamage = w.damage end
-		local percentRowLength = w.damage / maxDamage
-		local percenttext = PercentageNum(w.damage / totalDamage)
-		local textName = string.format("%d. %s (%d)", j, w.name, w.count)
-		local textDamage = string.format("%s (%s)", ShortNum(w.damage), percenttext)
+		if j==1 then maxDamage = w.value end
+		local percentRowLength = w.value / maxDamage
+		local percenttext = PercentageNum(w.value / total)
+		
+		local name = w.id
 		local color = DEFAULT_COLORS[1 + j%(#DEFAULT_COLORS)]
-		Kurecount_FillRowFrame(DETAILS_ROW..j, textName, textDamage, color, percentRowLength)
+		if player_info[w.id] then
+			name = player_info[w.id].name
+			color = CLASS_COLORS[player_info[w.id].classFilename]
+		end
+		
+		local textName = string.format("%d. %s (%d)", j, name, w.count)
+		local textDamage = string.format("%s (%s)", ShortNum(w.value), percenttext)
+		Kurecount_FillRowFrame(DETAILS_ROW..j, w.id, textName, textDamage, color, percentRowLength)
 	end
 	Kurecount_HideRowsDetailsFrame(#damageTable + 1, 40)
 end
 
 
 function Kurecount_UpdateDetailsSpells()
-	for i, v in ipairs(party_damage) do
-		if v.name == detailsName then
-			Kurecount_UpdateDetailsDamage(v.damageBySpell, v.damage)
+	for i, v in ipairs(MAIN_DATA_TABLES[DAMAGE]) do
+		if v.id == selectedGuid then
+			Kurecount_UpdateDetailsDamage(party_spells)
 		end
 	end
 end
 
 function Kurecount_UpdateDetailsTargets()
-	for i, v in ipairs(party_damage) do
-		if v.name == detailsName then
-			Kurecount_UpdateDetailsDamage(v.damageByTarget, v.damage)
+	for i, v in ipairs(MAIN_DATA_TABLES[DAMAGE]) do
+		if v.id == selectedGuid then
+			Kurecount_UpdateDetailsDamage(party_targets)
 		end
 	end
 end
 
 function Kurecount_UpdateDetailsTargetPlayers()
-	for i, v in ipairs(target_damage) do
-		if v.name == detailsName then
-			Kurecount_UpdateDetailsDamage(v.damageByPlayer, v.damage)
+	for i, v in ipairs(MAIN_DATA_TABLES[TARGETS]) do
+		if v.id == selectedGuid then
+			Kurecount_UpdateDetailsDamage(target_source)
 		end
 	end
 end
 
 function Kurecount_UpdateMainFrame(tableVar, i)
-	print ("Kurecount_UpdateMainFrame")
-	local name, textName, textDamage, color, colorPercent = Kurecount_GetRowParamsFromTable(tableVar, i)
-	Kurecount_FillRowFrame(MAIN_ROW..i, name, textName, textDamage, color, colorPercent)
+	local id, textName, textDamage, color, colorPercent = Kurecount_GetRowParamsFromTable(tableVar, i)
+	Kurecount_FillRowFrame(MAIN_ROW..i, id, textName, textDamage, color, colorPercent)
 end
 
 
 function Kurecount_GetRowParamsFromTable(tableVar, i)
+	local total = Kurecount_GetTotalValue(tableVar)
 	local color, name
-	if player_info[tableVar[i].name] then
-		color = CLASS_COLORS[player_info[tableVar[i].name].classFilename]
-		name = player_info[tableVar[i].name].name
+	local id = tableVar[i].id
+	if player_info[id] then
+		Kurecount_UpdatePlayerInfoGuid(id)
+		color = CLASS_COLORS[player_info[id].classFilename]
+		name = player_info[id].name
 	else
 		color = DEFAULT_COLORS[1 + i%(#DEFAULT_COLORS)]
-		name = tableVar[i].name
+		name = id
 	end
 
-	local maxDamage = tableVar[1].damage
-	local damagetext = ShortNum(tableVar[i].damage)
-	local percenttext = PercentageNum(tableVar[i].damage/tableVar.damage)
+	local maxDamage = tableVar[1].value
+	local damagetext = ShortNum(tableVar[i].value)
+	local percenttext = PercentageNum(tableVar[i].value/total)
 	
 	local totalTime
 	if is_on_combat then
@@ -528,18 +566,23 @@ function Kurecount_GetRowParamsFromTable(tableVar, i)
 	end
 	local dpstext = ShortNum(0)
 	if totalTime > 0 then 
-		dpstext = ShortNum(tableVar[i].damage/totalTime)
+		dpstext = ShortNum(tableVar[i].value/totalTime)
 	end
-	local percentRowLength = tableVar[i].damage / maxDamage
-	local textName = string.format("%d. %s", i, name)
+	local percentRowLength = tableVar[i].value / maxDamage
+	local textName = ""
+	if not name then
+		print("ERROR: No name for guid " + id)
+	else 
+		textName = string.format("%d. %s", i, name)
+	end
 	local textDamage = string.format("%s (%s, %s)", damagetext, dpstext, percenttext)
 	
-	return name, textName, textDamage, color, percentRowLength
+	return id, textName, textDamage, color, percentRowLength
 end 
 
-function Kurecount_FillRowFrame(frameName, name, textLeft, textRight, color, colorPercent)
+function Kurecount_FillRowFrame(frameName, id, textLeft, textRight, color, colorPercent)
 	local row = getglobal(frameName)
-	row.name = name
+	row.id = id
 	local texture = getglobal(frameName.."Bar")
 	texture:SetColorTexture(color.r, color.g, color.b, 1)
 	texture:SetWidth(row:GetWidth() * colorPercent)
