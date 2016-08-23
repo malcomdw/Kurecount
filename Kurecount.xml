@@ -83,7 +83,7 @@
 		</Frames>
 	</Frame>
 
-	<Frame name="BarFrameTemplate" virtual="true">
+	<Frame name="BarFrameTemplate" virtual="true" hidden="true">
 		<Size  x="100" y="16"/>
 		<Layers>
 			<Layer level="BACKGROUND">
